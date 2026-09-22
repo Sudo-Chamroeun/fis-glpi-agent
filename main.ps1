@@ -1,6 +1,7 @@
+#https://raw.githubusercontent.com/Sudo-Chamroeun/fis-glpi-agent/refs/heads/main/installer.ps1"
 <#
 .SYNOPSIS
-    GLPI Agent Interactive Installer Menu
+    GLPI Agent Interactive Management Menu
 #>
 
 # 1. Ensure Administrator
@@ -9,48 +10,105 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     Break
 }
 
-# 2. Clear and Display Menu
-Clear-Host
-Write-Host "=========================================" -ForegroundColor Cyan
-Write-Host "   GLPI Agent Deployment Menu" -ForegroundColor Cyan
-Write-Host "=========================================" -ForegroundColor Cyan
-Write-Host "1. Install as Laptop" -ForegroundColor Yellow
-Write-Host "2. Install as Desktop" -ForegroundColor Yellow
-Write-Host "3. Install as Server" -ForegroundColor Yellow
-Write-Host "4. Exit" -ForegroundColor Red
-Write-Host "=========================================" -ForegroundColor Cyan
-
-# 3. Get User Choice
-$Choice = Read-Host "Select an option (1-4)"
-
-switch ($Choice) {
-    "1" { $Tag = "Laptop" }
-    "2" { $Tag = "Desktop" }
-    "3" { $Tag = "Server" }
-    "4" { Write-Host "Exiting..."; Break }
-    Default { Write-Host "Invalid choice. Exiting." -ForegroundColor Red; Break }
+# Function to pause the screen so the user can read messages
+function Pause-Menu {
+    Write-Host "`nPress any key to return to the menu..." -ForegroundColor Yellow
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }
 
-Write-Host "`nPreparing to install as $Tag..." -ForegroundColor Green
+# Function to handle the installation
+function Install-Agent($Tag) {
+    Write-Host "`nPreparing to install as $Tag..." -ForegroundColor Green
+    
+    # Download the installer.ps1 from GitHub
+    $InstallerUrl = "https://raw.githubusercontent.com/Sudo-Chamroeun/fis-glpi-agent/refs/heads/main/installer.ps1"
+    $InstallerPath = "$env:TEMP\glpi-installer.ps1"
+    
+    Write-Host "Downloading installer script..." -ForegroundColor Cyan
+    try {
+        Invoke-WebRequest -Uri $InstallerUrl -OutFile $InstallerPath -UseBasicParsing
+    } catch {
+        Write-Host "Failed to download installer.ps1. Check your GitHub repo is public." -ForegroundColor Red
+        Pause-Menu
+        return
+    }
 
-# 4. Download the installer.ps1 from GitHub
-# IMPORTANT: Update this URL to your actual raw GitHub URL
-$InstallerUrl = "https://raw.githubusercontent.com/Sudo-Chamroeun/fis-glpi-agent/refs/heads/main/installer.ps1"
-$InstallerPath = "$env:TEMP\glpi-installer.ps1"
-
-Write-Host "Downloading installer script..."
-try {
-    Invoke-WebRequest -Uri $InstallerUrl -OutFile $InstallerPath -UseBasicParsing
-} catch {
-    Write-Host "Failed to download installer.ps1. Check your GitHub repo is public." -ForegroundColor Red
-    Break
+    # Execute installer.ps1 using cmd.exe
+    Write-Host "Running installation via cmd.exe..." -ForegroundColor Cyan
+    $CmdArgs = "/c powershell.exe -ExecutionPolicy Bypass -File `"$InstallerPath`" -Tag $Tag"
+    Start-Process cmd.exe -ArgumentList $CmdArgs -Wait -NoNewWindow
+    
+    Pause-Menu
 }
 
-# 5. Execute installer.ps1 using cmd.exe to avoid PowerShell environment issues
-Write-Host "Running installation via cmd.exe..." -ForegroundColor Cyan
-# We use cmd.exe to call powershell.exe -File, and the .ps1 file itself uses cmd.exe for msiexec
-$CmdArgs = "/c powershell.exe -ExecutionPolicy Bypass -File `"$InstallerPath`" -Tag $Tag"
-Start-Process cmd.exe -ArgumentList $CmdArgs -Wait -NoNewWindow
+# Function to force the agent to sync immediately
+function Force-Sync {
+    Write-Host "`nForcing GLPI Agent to sync..." -ForegroundColor Cyan
+    $AgentExe = "C:\Program Files\GLPI-Agent\glpi-agent.exe"
+    
+    if (Test-Path $AgentExe) {
+        Start-Process $AgentExe -ArgumentList "--force" -Wait -NoNewWindow
+        Write-Host "Sync command sent successfully." -ForegroundColor Green
+    } else {
+        Write-Host "GLPI Agent not found at $AgentExe" -ForegroundColor Red
+    }
+    Pause-Menu
+}
 
-Write-Host "`nProcess finished. Press any key to exit." -ForegroundColor Green
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+# Function to uninstall the agent
+function Uninstall-Agent {
+    Write-Host "`nSearching for GLPI Agent..." -ForegroundColor Cyan
+    
+    # Search the registry for the GLPI Agent uninstall string
+    $GlpiApp = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | Where-Object { $_.DisplayName -like '*GLPI Agent*' }
+    
+    if ($GlpiApp) {
+        Write-Host "Found $($GlpiApp.DisplayName). Uninstalling..." -ForegroundColor Yellow
+        $Process = Start-Process msiexec.exe -ArgumentList "/x $($GlpiApp.PSChildName) /quiet" -Wait -PassThru -NoNewWindow
+        
+        if ($Process.ExitCode -eq 0) {
+            Write-Host "Uninstalled successfully." -ForegroundColor Green
+        } else {
+            Write-Host "Uninstall failed with exit code $($Process.ExitCode)." -ForegroundColor Red
+        }
+    } else {
+        Write-Host "GLPI Agent is not installed on this machine." -ForegroundColor Yellow
+    }
+    Pause-Menu
+}
+
+# --- MAIN MENU LOOP ---
+while ($true) {
+    Clear-Host
+    Write-Host "=========================================" -ForegroundColor Cyan
+    Write-Host "   GLPI Agent Deployment Menu" -ForegroundColor Cyan
+    Write-Host "=========================================" -ForegroundColor Cyan
+    Write-Host "1. Install as Laptop" -ForegroundColor Yellow
+    Write-Host "2. Install as Desktop" -ForegroundColor Yellow
+    Write-Host "3. Install as Server" -ForegroundColor Yellow
+    Write-Host "F. Force Agent Sync (Run Inventory Now)" -ForegroundColor Magenta
+    Write-Host "U. Uninstall GLPI Agent" -ForegroundColor Red
+    Write-Host "0. Exit & Clear Screen" -ForegroundColor Red
+    Write-Host "=========================================" -ForegroundColor Cyan
+
+    $Choice = Read-Host "Select an option"
+
+    switch ($Choice) {
+        "1" { Install-Agent "Laptop" }
+        "2" { Install-Agent "Desktop" }
+        "3" { Install-Agent "Server" }
+        "F" { Force-Sync }
+        "f" { Force-Sync }
+        "U" { Uninstall-Agent }
+        "u" { Uninstall-Agent }
+        "0" { 
+            Clear-Host
+            Write-Host "Exiting. Have a great day!" -ForegroundColor Green
+            Break 
+        }
+        Default { 
+            Write-Host "Invalid choice. Please try again." -ForegroundColor Red
+            Start-Sleep -Seconds 1
+        }
+    }
+}
