@@ -35,7 +35,7 @@ Write-Host "`nPreparing to install as $Tag..." -ForegroundColor Green
 
 # 4. Download the installer.ps1 from GitHub
 # IMPORTANT: Update this URL to your actual raw GitHub URL
-$InstallerUrl = "https://raw.githubusercontent.com/Sudo-Chamroeun/fis-glpi-agent/main/installer.ps1"
+$InstallerUrl = "https://raw.githubusercontent.com/Sudo-Chamroeun/fis-glpi-agent/refs/heads/main/installer.ps1"
 $InstallerPath = "$env:TEMP\glpi-installer.ps1"
 
 Write-Host "Downloading installer script..."
