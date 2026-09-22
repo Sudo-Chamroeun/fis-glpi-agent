@@ -44,11 +44,19 @@ function Install-Agent($Tag) {
 # Function to force the agent to sync immediately
 function Force-Sync {
     Write-Host "`nForcing GLPI Agent to sync..." -ForegroundColor Cyan
-    $AgentExe = "C:\Program Files\GLPI-Agent\glpi-agent.exe"
+    
+    # Correct path to the agent's executable/batch file
+    $AgentExe = "C:\Program Files\GLPI-Agent\glpi-agent.bat"
     
     if (Test-Path $AgentExe) {
-        Start-Process $AgentExe -ArgumentList "--force" -Wait -NoNewWindow
-        Write-Host "Sync command sent successfully." -ForegroundColor Green
+        # We call it via cmd.exe to ensure the environment is correct, just like the installer
+        $Process = Start-Process cmd.exe -ArgumentList "/c `"$AgentExe`" --force" -Wait -PassThru -NoNewWindow
+        
+        if ($Process.ExitCode -eq 0) {
+            Write-Host "Sync command sent successfully." -ForegroundColor Green
+        } else {
+            Write-Host "Sync command failed with exit code $($Process.ExitCode)." -ForegroundColor Red
+        }
     } else {
         Write-Host "GLPI Agent not found at $AgentExe" -ForegroundColor Red
     }
