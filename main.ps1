@@ -1,4 +1,3 @@
-#https://raw.githubusercontent.com/Sudo-Chamroeun/fis-glpi-agent/refs/heads/main/installer.ps1"
 <#
 .SYNOPSIS
     GLPI Agent Interactive Management Menu
@@ -12,8 +11,8 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 
 # Function to pause the screen so the user can read messages
 function Pause-Menu {
-    Write-Host "`nPress any key to return to the menu..." -ForegroundColor Yellow
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    Write-Host "`nPress [Enter] to return to the menu..." -ForegroundColor Yellow
+    $null = Read-Host
 }
 
 # Function to handle the installation
@@ -49,7 +48,7 @@ function Force-Sync {
     $AgentExe = "C:\Program Files\GLPI-Agent\glpi-agent.bat"
     
     if (Test-Path $AgentExe) {
-        # We call it via cmd.exe to ensure the environment is correct, just like the installer
+        # We call it via cmd.exe to ensure the environment is correct
         $Process = Start-Process cmd.exe -ArgumentList "/c `"$AgentExe`" --force" -Wait -PassThru -NoNewWindow
         
         if ($Process.ExitCode -eq 0) {
