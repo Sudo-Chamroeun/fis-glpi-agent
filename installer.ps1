@@ -9,7 +9,7 @@ param(
 # Configuration
 $MsiUrl = "https://raw.githubusercontent.com/Sudo-Chamroeun/fis-glpi-agent/main/GLPI-Agent-1.19-x64.msi"
 $MsiPath = "$env:TEMP\GLPI-Agent-1.19-x64.msi"
-$GlpiServer = "http://172.26.0.2:9090/front/inventory.php"
+$GlpiServer = "https://inventory.footprints.work/front/inventory.php"
 $LogPath = "$env:TEMP\GLPI-Agent-Install.log"
 
 Write-Host "Downloading GLPI Agent MSI..." -ForegroundColor Cyan
