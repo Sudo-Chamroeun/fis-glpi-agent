@@ -7,7 +7,7 @@ param(
 )
 
 # Configuration
-$MsiUrl = "https://raw.githubusercontent.com/Sudo-Chamroeun/fis-glpi-agent/main/GLPI-Agent-1.19-x64.msi"
+$MsiUrl = "https://raw.githubusercontent.com/Sudo-Chamroeun/fis-glpi-agent/main/GLPI-Agent-1.20-x64.msi"
 $MsiPath = "$env:TEMP\GLPI-Agent-1.19-x64.msi"
 $GlpiServer = "https://inventory.footprints.work/front/inventory.php"
 $LogPath = "$env:TEMP\GLPI-Agent-Install.log"
