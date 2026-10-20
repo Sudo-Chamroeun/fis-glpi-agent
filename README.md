@@ -5,6 +5,6 @@ URL: agent-inventory.footprints.work
 
 Run powershell as administrator:
 
----bash
+--- bash
 irm agent-inventory.footprints.work | iex
 ---
